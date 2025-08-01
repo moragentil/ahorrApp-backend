@@ -9,12 +9,12 @@ class GastoService implements GastoServiceInterface
 {
     public function all()
     {
-        return Gasto::all();
+        return Gasto::with('categoria')->get();
     }
 
     public function find($id)
     {
-        return Gasto::findOrFail($id);
+        return Gasto::with('categoria')->findOrFail($id);
     }
 
     public function create(array $data)
