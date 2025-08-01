@@ -11,6 +11,8 @@ use App\Services\Interface\UserServiceInterface;
 use App\Services\Implementation\UserService;
 use App\Services\Interface\CategoriaServiceInterface;
 use App\Services\Implementation\CategoriaService;
+use App\Services\Interface\AhorroServiceInterface;
+use App\Services\Implementation\AhorroService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,6 +25,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(GastoServiceInterface::class, GastoService::class);
         $this->app->bind(UserServiceInterface::class, UserService::class);
         $this->app->bind(CategoriaServiceInterface::class, CategoriaService::class);
+        $this->app->bind(AhorroServiceInterface::class, AhorroService::class);
     }
 
     /**

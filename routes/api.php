@@ -7,6 +7,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\IngresoController;
 use App\Http\Controllers\GastoController;
 use App\Http\Controllers\CategoriaController;
+use App\Http\Controllers\AhorroController;
 
 // Auth
 Route::post('/register', [AuthController::class, 'register']);
@@ -41,4 +42,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/categorias', [CategoriaController::class, 'store']);
     Route::put('/categorias/{id}', [CategoriaController::class, 'update']);
     Route::delete('/categorias/{id}', [CategoriaController::class, 'destroy']);
+
+    // Ahorros
+    Route::get('/ahorros', [AhorroController::class, 'index']);
+    Route::get('/ahorros/{id}', [AhorroController::class, 'show']);
+    Route::post('/ahorros', [AhorroController::class, 'store']);
+    Route::put('/ahorros/{id}', [AhorroController::class, 'update']);
+    Route::delete('/ahorros/{id}', [AhorroController::class, 'destroy']);
 });
