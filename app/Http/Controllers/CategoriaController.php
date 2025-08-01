@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Services\CategoriaServiceInterface;
+use App\Services\Interface\CategoriaServiceInterface;
 
 class CategoriaController extends Controller
 {

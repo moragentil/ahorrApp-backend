@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Implementation;
 
 use App\Models\User;
+use App\Services\Interface\UserServiceInterface;
 
 class UserService implements UserServiceInterface
 {

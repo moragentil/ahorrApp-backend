@@ -8,6 +8,7 @@ use App\Http\Controllers\IngresoController;
 use App\Http\Controllers\GastoController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\AhorroController;
+use App\Http\Controllers\DashboardController;
 
 // Auth
 Route::post('/register', [AuthController::class, 'register']);
@@ -53,4 +54,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', function (Request $request) {
         return response()->json($request->user());
     });
+
+    Route::get('/dashboard', [DashboardController::class, 'home']);
 });

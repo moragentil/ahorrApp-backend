@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Implementation;
 
 use App\Models\Categoria;
+use App\Services\Interface\CategoriaServiceInterface;
+
 
 class CategoriaService implements CategoriaServiceInterface
 {

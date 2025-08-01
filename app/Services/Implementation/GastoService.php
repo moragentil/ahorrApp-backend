@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Implementation;
 
 use App\Models\Gasto;
+use App\Services\Interface\GastoServiceInterface;
 
 class GastoService implements GastoServiceInterface
 {

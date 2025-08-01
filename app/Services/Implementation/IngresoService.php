@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Implementation;
 
 use App\Models\Ingreso;
+use App\Services\Interface\IngresoServiceInterface;
 
 class IngresoService implements IngresoServiceInterface
 {

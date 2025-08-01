@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Services\IngresoServiceInterface;
+use App\Services\Interface\IngresoServiceInterface;
 
 class IngresoController extends Controller
 {

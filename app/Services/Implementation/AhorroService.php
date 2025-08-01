@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Implementation;
 
 use App\Models\Ahorro;
+use App\Services\Interface\AhorroServiceInterface;
 
 class AhorroService implements AhorroServiceInterface
 {
