@@ -49,4 +49,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/ahorros', [AhorroController::class, 'store']);
     Route::put('/ahorros/{id}', [AhorroController::class, 'update']);
     Route::delete('/ahorros/{id}', [AhorroController::class, 'destroy']);
+
+    Route::get('/me', function (Request $request) {
+        return response()->json($request->user());
+    });
 });
