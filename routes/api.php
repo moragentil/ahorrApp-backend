@@ -34,6 +34,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Gastos
     Route::get('/gastos', [GastoController::class, 'index']);
+    Route::get('/gastos/top', [GastoController::class, 'topGastos']);
     Route::get('/gastos/{id}', [GastoController::class, 'show']);
     Route::post('/gastos', [GastoController::class, 'store']);
     Route::put('/gastos/{id}', [GastoController::class, 'update']);

@@ -52,4 +52,10 @@ class GastoController extends Controller
         $this->service->delete($id);
         return response()->json(['message' => 'Deleted']);
     }
+    
+    public function topGastos(Request $request)
+    {
+        $userId = $request->user()->id;
+        return response()->json($this->service->topGastos($userId));
+    }
 }
