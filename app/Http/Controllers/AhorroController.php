@@ -35,6 +35,7 @@ class AhorroController extends Controller
             'fecha_limite' => 'date|nullable',
             'prioridad' => 'required|in:Baja,Media,Alta',
             'estado' => 'required|in:Activo,Completado,Cancelado',
+            'color' => 'string|nullable', // <-- agregar aquí
         ]);
         return response()->json($this->service->create($data), 201);
     }
@@ -49,6 +50,7 @@ class AhorroController extends Controller
             'fecha_limite' => 'date|nullable',
             'prioridad' => 'in:Baja,Media,Alta',
             'estado' => 'in:Activo,Completado,Cancelado',
+            'color' => 'string|nullable', // <-- agregar aquí
         ]);
         return response()->json($this->service->update($id, $data));
     }

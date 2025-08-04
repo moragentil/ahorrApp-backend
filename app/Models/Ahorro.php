@@ -18,6 +18,7 @@ class Ahorro extends Model
         'fecha_limite',
         'prioridad',
         'estado',
+        'color',
     ];
 
     protected $casts = [
