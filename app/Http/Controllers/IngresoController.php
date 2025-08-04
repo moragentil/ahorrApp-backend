@@ -15,9 +15,10 @@ class IngresoController extends Controller
         $this->service = $service;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json($this->service->all());
+        $userId = $request->user()->id;
+        return response()->json($this->service->all($userId));
     }
 
     public function show($id)

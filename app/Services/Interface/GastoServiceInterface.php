@@ -4,7 +4,7 @@ namespace App\Services\Interface;
 
 interface GastoServiceInterface
 {
-    public function all();
+    public function all($userId);
     public function find($id);
     public function create(array $data);
     public function update($id, array $data);

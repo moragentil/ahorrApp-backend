@@ -7,9 +7,9 @@ use App\Services\Interface\AhorroServiceInterface;
 
 class AhorroService implements AhorroServiceInterface
 {
-    public function all()
+    public function all($userId)
     {
-        return Ahorro::all();
+        return Ahorro::where('user_id', $userId)->get();
     }
 
     public function find($id)

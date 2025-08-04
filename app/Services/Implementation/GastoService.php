@@ -8,9 +8,9 @@ use Illuminate\Support\Facades\DB;
 
 class GastoService implements GastoServiceInterface
 {
-    public function all()
+    public function all($userId)
     {
-        return Gasto::with('categoria')->get();
+        return Gasto::with('categoria')->where('user_id', $userId)->get();
     }
 
     public function find($id)

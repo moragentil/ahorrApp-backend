@@ -8,9 +8,9 @@ use App\Services\Interface\CategoriaServiceInterface;
 
 class CategoriaService implements CategoriaServiceInterface
 {
-    public function all()
+    public function all($userId)
     {
-        return Categoria::all();
+        return Categoria::where('user_id', $userId)->get();
     }
 
     public function find($id)
@@ -37,9 +37,11 @@ class CategoriaService implements CategoriaServiceInterface
         return true;
     }
     
-    public function getByTipo($tipo)
+    public function getByTipo($tipo, $userId)
     {
-        return Categoria::where('tipo', $tipo)->get();
+        return Categoria::where('tipo', $tipo)
+            ->where('user_id', $userId)
+            ->get();
     }
     
     public function resumenCategorias($userId)

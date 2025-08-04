@@ -10,9 +10,9 @@ use App\Models\User;
 
 class IngresoService implements IngresoServiceInterface
 {
-    public function all()
+    public function all($userId)
     {
-        return Ingreso::with('categoria')->get();
+        return Ingreso::with('categoria')->where('user_id', $userId)->get();
     }
 
     public function find($id)

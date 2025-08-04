@@ -14,9 +14,10 @@ class CategoriaController extends Controller
         $this->service = $service;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json($this->service->all());
+        $userId = $request->user()->id;
+        return response()->json($this->service->all($userId));
     }
 
     public function show($id)
@@ -51,14 +52,16 @@ class CategoriaController extends Controller
         return response()->json(['message' => 'Deleted']);
     }
 
-    public function gastoCategorias()
+    public function gastoCategorias(Request $request)
     {
-        return response()->json($this->service->getByTipo('gasto'));
+        $userId = $request->user()->id;
+        return response()->json($this->service->getByTipo('gasto', $userId));
     }
 
-    public function ingresoCategorias()
+    public function ingresoCategorias(Request $request)
     {
-        return response()->json($this->service->getByTipo('ingreso'));
+        $userId = $request->user()->id;
+        return response()->json($this->service->getByTipo('ingreso', $userId));
     }
     
     public function resumen(Request $request)
