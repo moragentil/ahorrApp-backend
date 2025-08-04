@@ -41,11 +41,13 @@ Route::middleware('auth:sanctum')->group(function () {
     // Categorias
     Route::get('/categorias/gasto', [CategoriaController::class, 'gastoCategorias']);
     Route::get('/categorias/ingreso', [CategoriaController::class, 'ingresoCategorias']);
+    Route::get('/categorias/resumen', [CategoriaController::class, 'resumen']);
     Route::get('/categorias', [CategoriaController::class, 'index']);
     Route::get('/categorias/{id}', [CategoriaController::class, 'show']);
     Route::post('/categorias', [CategoriaController::class, 'store']);
     Route::put('/categorias/{id}', [CategoriaController::class, 'update']);
     Route::delete('/categorias/{id}', [CategoriaController::class, 'destroy']);
+
 
     // Ahorros
     Route::get('/ahorros', [AhorroController::class, 'index']);

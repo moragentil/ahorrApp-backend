@@ -10,4 +10,5 @@ interface CategoriaServiceInterface
     public function update($id, array $data);
     public function delete($id);
     public function getByTipo($tipo);
+    public function resumenCategorias($userId);
 }

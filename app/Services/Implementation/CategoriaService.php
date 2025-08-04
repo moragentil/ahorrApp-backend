@@ -41,4 +41,27 @@ class CategoriaService implements CategoriaServiceInterface
     {
         return Categoria::where('tipo', $tipo)->get();
     }
+    
+    public function resumenCategorias($userId)
+    {
+        $categorias = Categoria::where('user_id', $userId)->get();
+
+        return $categorias->map(function ($cat) {
+            if ($cat->tipo === 'gasto') {
+                $total = $cat->gastos()->sum('monto');
+                $transacciones = $cat->gastos()->count();
+            } else {
+                $total = $cat->ingresos()->sum('monto');
+                $transacciones = $cat->ingresos()->count();
+            }
+            return [
+                'id' => $cat->id,
+                'nombre' => $cat->nombre,
+                'tipo' => $cat->tipo,
+                'color' => $cat->color,
+                'total_gastado' => $total,
+                'total_transacciones' => $transacciones,
+            ];
+        });
+    }
 }

@@ -60,4 +60,10 @@ class CategoriaController extends Controller
     {
         return response()->json($this->service->getByTipo('ingreso'));
     }
+    
+    public function resumen(Request $request)
+    {
+        $userId = $request->user()->id;
+        return response()->json($this->service->resumenCategorias($userId));
+    }
 }
