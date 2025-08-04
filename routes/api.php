@@ -38,6 +38,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/gastos/{id}', [GastoController::class, 'destroy']);
 
     // Categorias
+    Route::get('/categorias/gasto', [CategoriaController::class, 'gastoCategorias']);
+    Route::get('/categorias/ingreso', [CategoriaController::class, 'ingresoCategorias']);
     Route::get('/categorias', [CategoriaController::class, 'index']);
     Route::get('/categorias/{id}', [CategoriaController::class, 'show']);
     Route::post('/categorias', [CategoriaController::class, 'store']);

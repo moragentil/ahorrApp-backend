@@ -36,4 +36,9 @@ class CategoriaService implements CategoriaServiceInterface
         $categoria->delete();
         return true;
     }
+    
+    public function getByTipo($tipo)
+    {
+        return Categoria::where('tipo', $tipo)->get();
+    }
 }

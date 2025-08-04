@@ -50,4 +50,14 @@ class CategoriaController extends Controller
         $this->service->delete($id);
         return response()->json(['message' => 'Deleted']);
     }
+
+    public function gastoCategorias()
+    {
+        return response()->json($this->service->getByTipo('gasto'));
+    }
+
+    public function ingresoCategorias()
+    {
+        return response()->json($this->service->getByTipo('ingreso'));
+    }
 }
