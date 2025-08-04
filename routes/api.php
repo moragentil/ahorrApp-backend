@@ -24,6 +24,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/users/{id}', [UserController::class, 'destroy']);
 
     // Ingresos
+    Route::get('/ingresos/estadisticas', [IngresoController::class, 'estadisticas']);
     Route::get('/ingresos', [IngresoController::class, 'index']);
     Route::get('/ingresos/{id}', [IngresoController::class, 'show']);
     Route::post('/ingresos', [IngresoController::class, 'store']);

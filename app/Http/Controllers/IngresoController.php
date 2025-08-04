@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\Interface\IngresoServiceInterface;
+use App\Models\User;
 
 class IngresoController extends Controller
 {
@@ -51,5 +52,13 @@ class IngresoController extends Controller
     {
         $this->service->delete($id);
         return response()->json(['message' => 'Deleted']);
+    }
+
+    public function estadisticas(Request $request)
+    {
+        $user = $request->user();
+        $month = $request->query('month');
+        $year = $request->query('year');
+        return response()->json($this->service->estadisticas($user, $month, $year));
     }
 }
