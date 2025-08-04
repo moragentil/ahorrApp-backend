@@ -39,4 +39,23 @@ class UserController extends Controller
         $this->service->delete($id);
         return response()->json(['message' => 'Deleted']);
     }
+
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+
+        $data = $request->validate([
+            'name' => 'string',
+            'email' => 'email',
+            'password' => 'nullable|string|min:6|confirmed', // requiere password_confirmation
+        ]);
+
+        if (isset($data['password'])) {
+            $data['password'] = bcrypt($data['password']);
+        }
+
+        $user->update($data);
+
+        return response()->json($user);
+    }
 }
