@@ -12,12 +12,12 @@ class IngresoService implements IngresoServiceInterface
 {
     public function all()
     {
-        return Ingreso::all();
+        return Ingreso::with('categoria')->get();
     }
 
     public function find($id)
     {
-        return Ingreso::findOrFail($id);
+        return Ingreso::with('categoria')->findOrFail($id);
     }
 
     public function create(array $data)
