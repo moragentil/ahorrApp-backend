@@ -107,6 +107,7 @@ class DashboardService
                 'monto_objetivo' => $a->monto_objetivo,
                 'porcentaje' => $porcentaje,
                 'color' => $a->color ?? null,
+                'estado' => $a->estado,
             ];
         });
 
