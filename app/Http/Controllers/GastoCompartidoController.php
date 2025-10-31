@@ -30,10 +30,10 @@ class GastoCompartidoController extends Controller
             'grupo_gasto_id' => 'required|exists:grupo_gastos,id',
             'descripcion' => 'required|string|max:255',
             'monto_total' => 'required|numeric|min:0',
-            'pagado_por' => 'required|exists:users,id',
+            'pagado_por_participante_id' => 'required|exists:participantes,id',
             'fecha' => 'required|date',
             'participantes' => 'nullable|array',
-            'participantes.*' => 'exists:users,id',
+            'participantes.*' => 'exists:participantes,id',
         ]);
 
         return response()->json($this->service->create($data), 201);
@@ -42,10 +42,10 @@ class GastoCompartidoController extends Controller
     public function update(Request $request, $id)
     {
         $data = $request->validate([
-            'descripcion' => 'string|max:255',
-            'monto_total' => 'numeric|min:0',
-            'pagado_por' => 'exists:users,id',
-            'fecha' => 'date',
+            'descripcion' => 'nullable|string|max:255',
+            'monto_total' => 'nullable|numeric|min:0',
+            'pagado_por_participante_id' => 'nullable|exists:participantes,id',
+            'fecha' => 'nullable|date',
         ]);
 
         return response()->json($this->service->update($id, $data));
@@ -61,8 +61,8 @@ class GastoCompartidoController extends Controller
     {
         $data = $request->validate([
             'aportes' => 'required|array',
-            'aportes.*.user_id' => 'required|exists:users,id',
-            'aportes.*.monto_esperado' => 'required|numeric|min:0',
+            'aportes.*.participante_id' => 'required|exists:participantes,id',
+            'aportes.*.monto_asignado' => 'required|numeric|min:0',
             'aportes.*.monto_pagado' => 'nullable|numeric|min:0',
         ]);
 
