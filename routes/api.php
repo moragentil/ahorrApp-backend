@@ -12,6 +12,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GrupoGastoController;
 use App\Http\Controllers\GastoCompartidoController;
 use App\Http\Controllers\AporteGastoController;
+use App\Http\Controllers\InvitacionGrupoController;
 
 // Auth
 Route::post('/register', [AuthController::class, 'register']);
@@ -85,6 +86,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/aportes/{id}', [AporteGastoController::class, 'update']);
     Route::delete('/aportes/{id}', [AporteGastoController::class, 'destroy']);
     Route::post('/aportes/{id}/pagar', [AporteGastoController::class, 'registrarPago']);
+
+    // Invitaciones a Grupos
+    Route::post('/grupos-gastos/{grupoId}/invitar', [InvitacionGrupoController::class, 'enviarInvitacion']);
+    Route::get('/invitaciones', [InvitacionGrupoController::class, 'misInvitaciones']);
+    Route::post('/invitaciones/{token}/aceptar', [InvitacionGrupoController::class, 'aceptar']);
+    Route::post('/invitaciones/{token}/rechazar', [InvitacionGrupoController::class, 'rechazar']);
+    Route::get('/grupos-gastos/{grupoId}/invitaciones', [InvitacionGrupoController::class, 'pendientes']);
+    Route::delete('/invitaciones/{invitacionId}', [InvitacionGrupoController::class, 'cancelar']);
 
     Route::get('/me', function (Request $request) {
         return response()->json($request->user());

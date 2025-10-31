@@ -12,6 +12,7 @@ use App\Services\Interface\AhorroServiceInterface;
 use App\Services\Interface\GrupoGastoServiceInterface;
 use App\Services\Interface\GastoCompartidoServiceInterface;
 use App\Services\Interface\AporteGastoServiceInterface;
+use App\Services\Interface\InvitacionGrupoServiceInterface;
 
 // Implementaciones
 use App\Services\Implementation\GastoService;
@@ -21,6 +22,7 @@ use App\Services\Implementation\AhorroService;
 use App\Services\Implementation\GrupoGastoService;
 use App\Services\Implementation\GastoCompartidoService;
 use App\Services\Implementation\AporteGastoService;
+use App\Services\Implementation\InvitacionGrupoService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -39,6 +41,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(GrupoGastoServiceInterface::class, GrupoGastoService::class);
         $this->app->bind(GastoCompartidoServiceInterface::class, GastoCompartidoService::class);
         $this->app->bind(AporteGastoServiceInterface::class, AporteGastoService::class);
+
+        // Servicio de invitaciones a grupos
+        $this->app->bind(InvitacionGrupoServiceInterface::class, InvitacionGrupoService::class);
     }
 
     /**
