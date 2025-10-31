@@ -30,9 +30,11 @@ class GrupoGastoController extends Controller
         $data = $request->validate([
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
+            'participantes_externos' => 'nullable|array',
+            'participantes_externos.*' => 'string|max:255',
         ]);
 
-        $data['creado_por'] = $request->user()->id;
+        $data['creador_id'] = $request->user()->id;
 
         return response()->json($this->service->create($data), 201);
     }
@@ -40,8 +42,11 @@ class GrupoGastoController extends Controller
     public function update(Request $request, $id)
     {
         $data = $request->validate([
-            'nombre' => 'string|max:255',
+            'nombre' => 'nullable|string|max:255',
             'descripcion' => 'nullable|string',
+            'estado' => 'nullable|in:activo,inactivo,cerrado',
+            'participantes_externos' => 'nullable|array',
+            'participantes_externos.*' => 'string|max:255',
         ]);
 
         return response()->json($this->service->update($id, $data));
@@ -57,11 +62,9 @@ class GrupoGastoController extends Controller
     {
         $data = $request->validate([
             'user_id' => 'required|exists:users,id',
-            'rol' => 'nullable|in:admin,miembro',
         ]);
 
-        $rol = $data['rol'] ?? 'miembro';
-        return response()->json($this->service->addParticipante($id, $data['user_id'], $rol));
+        return response()->json($this->service->addParticipante($id, $data['user_id']));
     }
 
     public function removeParticipante(Request $request, $id)

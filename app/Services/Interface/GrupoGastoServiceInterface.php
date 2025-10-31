@@ -1,4 +1,5 @@
 <?php
+// filepath: c:\Users\morag\Desktop\TP5\ahorrApp-backend\app\Services\Interface\GrupoGastoServiceInterface.php
 
 namespace App\Services\Interface;
 

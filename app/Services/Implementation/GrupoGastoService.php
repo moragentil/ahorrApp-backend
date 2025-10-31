@@ -3,6 +3,7 @@
 namespace App\Services\Implementation;
 
 use App\Models\GrupoGasto;
+use App\Models\Participante;
 use App\Services\Interface\GrupoGastoServiceInterface;
 use Illuminate\Support\Facades\DB;
 
@@ -10,35 +11,99 @@ class GrupoGastoService implements GrupoGastoServiceInterface
 {
     public function all($userId)
     {
-        return GrupoGasto::where('creado_por', $userId)
-            ->orWhereHas('participantes', function($q) use ($userId) {
+        return GrupoGasto::where('creador_id', $userId)
+            ->orWhereHas('miembros', function($q) use ($userId) {
                 $q->where('user_id', $userId);
             })
-            ->with(['participantes', 'gastos', 'creador'])
-            ->get();
+            ->with(['miembros', 'participantes.usuario', 'creador', 'gastosCompartidos'])
+            ->get()
+            ->map(function($grupo) {
+                return [
+                    'id' => $grupo->id,
+                    'nombre' => $grupo->nombre,
+                    'descripcion' => $grupo->descripcion,
+                    'estado' => $grupo->estado,
+                    'creador_id' => $grupo->creador_id,
+                    'creador' => $grupo->creador,
+                    'miembros' => $grupo->miembros,
+                    'participantes' => $grupo->participantes,
+                    'total_gastos' => $grupo->gastosCompartidos->count(),
+                    'monto_total' => $grupo->gastosCompartidos->sum('monto_total'),
+                    'created_at' => $grupo->created_at,
+                    'updated_at' => $grupo->updated_at,
+                ];
+            });
     }
 
     public function find($id)
     {
-        return GrupoGasto::with([
-            'participantes', 
-            'gastos.pagador', 
-            'gastos.aportes.usuario',
-            'creador'
+        $grupo = GrupoGasto::with([
+            'miembros',
+            'participantes.usuario',
+            'gastosCompartidos.pagador',
+            'gastosCompartidos.aportes.participante.usuario',
+            'creador',
+            'invitaciones' => function($q) {
+                $q->where('estado', 'pendiente');
+            }
         ])->findOrFail($id);
+
+        return [
+            'id' => $grupo->id,
+            'nombre' => $grupo->nombre,
+            'descripcion' => $grupo->descripcion,
+            'estado' => $grupo->estado,
+            'creador_id' => $grupo->creador_id,
+            'creador' => $grupo->creador,
+            'miembros' => $grupo->miembros,
+            'participantes' => $grupo->participantes,
+            'gastos_compartidos' => $grupo->gastosCompartidos,
+            'invitaciones_pendientes' => $grupo->invitaciones,
+            'created_at' => $grupo->created_at,
+            'updated_at' => $grupo->updated_at,
+        ];
     }
 
     public function create(array $data)
     {
         DB::beginTransaction();
         try {
-            $grupo = GrupoGasto::create($data);
+            // Crear el grupo
+            $grupo = GrupoGasto::create([
+                'nombre' => $data['nombre'],
+                'descripcion' => $data['descripcion'] ?? null,
+                'creador_id' => $data['creador_id'],
+                'estado' => 'activo',
+            ]);
             
-            // Agregar al creador como participante con rol admin
-            $grupo->participantes()->attach($data['creado_por'], ['rol' => 'admin']);
+            // Agregar al creador como miembro (puede ver/gestionar el grupo)
+            $grupo->miembros()->attach($data['creador_id']);
+
+            // Crear participante para el creador (aparece en gastos)
+            $creador = \App\Models\User::findOrFail($data['creador_id']);
+            Participante::create([
+                'grupo_gasto_id' => $grupo->id,
+                'nombre' => $creador->name,
+                'email' => $creador->email,
+                'user_id' => $creador->id,
+            ]);
+
+            // Agregar participantes externos si existen
+            if (isset($data['participantes_externos']) && is_array($data['participantes_externos'])) {
+                foreach ($data['participantes_externos'] as $nombreParticipante) {
+                    if (!empty(trim($nombreParticipante))) {
+                        Participante::create([
+                            'grupo_gasto_id' => $grupo->id,
+                            'nombre' => trim($nombreParticipante),
+                            'email' => null,
+                            'user_id' => null,
+                        ]);
+                    }
+                }
+            }
             
             DB::commit();
-            return $grupo->fresh(['participantes', 'creador']);
+            return $this->find($grupo->id);
         } catch (\Exception $e) {
             DB::rollBack();
             throw $e;
@@ -47,9 +112,42 @@ class GrupoGastoService implements GrupoGastoServiceInterface
 
     public function update($id, array $data)
     {
-        $grupo = GrupoGasto::findOrFail($id);
-        $grupo->update($data);
-        return $grupo->fresh(['participantes', 'gastos']);
+        DB::beginTransaction();
+        try {
+            $grupo = GrupoGasto::findOrFail($id);
+            
+            $grupo->update([
+                'nombre' => $data['nombre'] ?? $grupo->nombre,
+                'descripcion' => $data['descripcion'] ?? $grupo->descripcion,
+                'estado' => $data['estado'] ?? $grupo->estado,
+            ]);
+
+            // Actualizar participantes externos si se proporcionan
+            if (isset($data['participantes_externos']) && is_array($data['participantes_externos'])) {
+                // Eliminar participantes externos actuales (sin user_id)
+                Participante::where('grupo_gasto_id', $id)
+                    ->whereNull('user_id')
+                    ->delete();
+
+                // Crear nuevos participantes externos
+                foreach ($data['participantes_externos'] as $nombreParticipante) {
+                    if (!empty(trim($nombreParticipante))) {
+                        Participante::create([
+                            'grupo_gasto_id' => $id,
+                            'nombre' => trim($nombreParticipante),
+                            'email' => null,
+                            'user_id' => null,
+                        ]);
+                    }
+                }
+            }
+
+            DB::commit();
+            return $this->find($id);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
     }
 
     public function delete($id)
@@ -61,23 +159,64 @@ class GrupoGastoService implements GrupoGastoServiceInterface
 
     public function addParticipante($grupoId, $userId, $rol = 'miembro')
     {
-        $grupo = GrupoGasto::findOrFail($grupoId);
-        $grupo->participantes()->syncWithoutDetaching([$userId => ['rol' => $rol]]);
-        return $grupo->fresh('participantes');
+        DB::beginTransaction();
+        try {
+            $grupo = GrupoGasto::findOrFail($grupoId);
+            $usuario = \App\Models\User::findOrFail($userId);
+
+            // Agregar como miembro (puede ver/gestionar el grupo)
+            $grupo->miembros()->syncWithoutDetaching([$userId]);
+
+            // Verificar si ya existe como participante
+            $participanteExistente = Participante::where('grupo_gasto_id', $grupoId)
+                ->where('user_id', $userId)
+                ->first();
+
+            if (!$participanteExistente) {
+                // Crear participante (aparece en gastos)
+                Participante::create([
+                    'grupo_gasto_id' => $grupoId,
+                    'nombre' => $usuario->name,
+                    'email' => $usuario->email,
+                    'user_id' => $userId,
+                ]);
+            }
+
+            DB::commit();
+            return $this->find($grupoId);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
     }
 
     public function removeParticipante($grupoId, $userId)
     {
-        $grupo = GrupoGasto::findOrFail($grupoId);
-        $grupo->participantes()->detach($userId);
-        return $grupo->fresh('participantes');
+        DB::beginTransaction();
+        try {
+            $grupo = GrupoGasto::findOrFail($grupoId);
+            
+            // Remover como miembro
+            $grupo->miembros()->detach($userId);
+
+            // Remover como participante
+            Participante::where('grupo_gasto_id', $grupoId)
+                ->where('user_id', $userId)
+                ->delete();
+
+            DB::commit();
+            return $this->find($grupoId);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
     }
 
     public function calcularBalances($grupoId)
     {
         $grupo = GrupoGasto::with([
-            'participantes',
-            'gastos.aportes'
+            'participantes.usuario',
+            'gastosCompartidos.aportes.participante'
         ])->findOrFail($grupoId);
 
         $balances = [];
@@ -85,66 +224,39 @@ class GrupoGastoService implements GrupoGastoServiceInterface
         // Inicializar balances para cada participante
         foreach ($grupo->participantes as $participante) {
             $balances[$participante->id] = [
-                'user' => $participante,
+                'participante_id' => $participante->id,
+                'nombre' => $participante->nombre,
+                'email' => $participante->email,
+                'es_usuario' => !is_null($participante->user_id),
                 'total_pagado' => 0,
                 'total_debe' => 0,
                 'balance' => 0,
-                'deudas' => [], // A quién le debe y cuánto
-                'creditos' => [], // Quién le debe y cuánto
             ];
         }
 
         // Calcular totales por cada gasto
-        foreach ($grupo->gastos as $gasto) {
-            $pagadorId = $gasto->pagado_por;
+        foreach ($grupo->gastosCompartidos as $gasto) {
+            $pagadorId = $gasto->pagado_por_participante_id;
             
             // Sumar lo que pagó el pagador
             if (isset($balances[$pagadorId])) {
-                $balances[$pagadorId]['total_pagado'] += $gasto->monto_total;
+                $balances[$pagadorId]['total_pagado'] += (float) $gasto->monto_total;
             }
 
             // Sumar lo que debe cada participante según sus aportes
             foreach ($gasto->aportes as $aporte) {
-                $userId = $aporte->user_id;
-                if (isset($balances[$userId])) {
-                    $balances[$userId]['total_debe'] += $aporte->monto_esperado;
+                $participanteId = $aporte->participante_id;
+                if (isset($balances[$participanteId])) {
+                    $balances[$participanteId]['total_debe'] += (float) $aporte->monto_asignado;
                 }
             }
         }
 
         // Calcular balance neto (lo que pagó - lo que debe)
-        foreach ($balances as $userId => &$balance) {
-            $balance['balance'] = $balance['total_pagado'] - $balance['total_debe'];
-        }
-
-        // Calcular deudas y créditos específicos
-        $deudores = array_filter($balances, fn($b) => $b['balance'] < 0);
-        $acreedores = array_filter($balances, fn($b) => $b['balance'] > 0);
-
-        foreach ($deudores as $deudorId => $deudor) {
-            $montoRestante = abs($deudor['balance']);
-            
-            foreach ($acreedores as $acreedorId => $acreedor) {
-                if ($montoRestante <= 0.01) break;
-                if ($acreedor['balance'] <= 0.01) continue;
-
-                $montoPago = min($montoRestante, $acreedor['balance']);
-                
-                // Registrar la deuda
-                $balances[$deudorId]['deudas'][] = [
-                    'acreedor' => $acreedor['user'],
-                    'monto' => round($montoPago, 2),
-                ];
-
-                // Registrar el crédito
-                $balances[$acreedorId]['creditos'][] = [
-                    'deudor' => $deudor['user'],
-                    'monto' => round($montoPago, 2),
-                ];
-
-                $montoRestante -= $montoPago;
-                $balances[$acreedorId]['balance'] -= $montoPago;
-            }
+        foreach ($balances as &$balance) {
+            $balance['balance'] = round($balance['total_pagado'] - $balance['total_debe'], 2);
+            $balance['total_pagado'] = round($balance['total_pagado'], 2);
+            $balance['total_debe'] = round($balance['total_debe'], 2);
         }
 
         return array_values($balances);
