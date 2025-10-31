@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('gasto_compartidos', function (Blueprint $table) {
+        Schema::create('gastos_compartidos', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('grupo_gasto_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('grupo_gasto_id')->constrained('grupo_gastos')->onDelete('cascade');
+            $table->foreignId('pagado_por_participante_id')->constrained('participantes')->onDelete('cascade');
             $table->string('descripcion');
             $table->decimal('monto_total', 10, 2);
-            $table->foreignId('pagado_por')->constrained('users')->cascadeOnDelete();
             $table->date('fecha');
             $table->timestamps();
+
+            $table->index(['grupo_gasto_id', 'fecha']);
         });
     }
 
@@ -27,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('gasto_compartidos');
+        Schema::dropIfExists('gastos_compartidos');
     }
 };

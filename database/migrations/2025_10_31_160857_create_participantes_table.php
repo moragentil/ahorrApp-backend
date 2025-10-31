@@ -11,17 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('invitaciones_grupos', function (Blueprint $table) {
+        Schema::create('participantes', function (Blueprint $table) {
             $table->id();
             $table->foreignId('grupo_gasto_id')->constrained('grupo_gastos')->onDelete('cascade');
-            $table->string('email');
-            $table->foreignId('invitado_por')->constrained('users')->onDelete('cascade');
-            $table->enum('estado', ['pendiente', 'aceptada', 'rechazada'])->default('pendiente');
-            $table->string('token')->unique();
-            $table->timestamp('expira_en')->nullable();
+            $table->string('nombre');
+            $table->string('email')->nullable();
+            $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
 
-            $table->index(['email', 'grupo_gasto_id']);
+            $table->index(['grupo_gasto_id', 'user_id']);
         });
     }
 
@@ -30,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('invitaciones_grupos');
+        Schema::dropIfExists('participantes');
     }
 };

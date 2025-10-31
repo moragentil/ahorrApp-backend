@@ -11,7 +11,6 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::dropIfExists('invitaciones_grupos');
         Schema::create('invitaciones_grupos', function (Blueprint $table) {
             $table->id();
             $table->foreignId('grupo_gasto_id')->constrained('grupo_gastos')->onDelete('cascade');
@@ -24,7 +23,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['email', 'grupo_gasto_id']);
-            $table->index(['user_id', 'estado']);
+            $table->index('token');
         });
     }
 

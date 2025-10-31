@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('nombre');
             $table->text('descripcion')->nullable();
-            $table->foreignId('creado_por')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('creador_id')->constrained('users')->onDelete('cascade');
+            $table->enum('estado', ['activo', 'inactivo', 'cerrado'])->default('activo');
             $table->timestamps();
         });
     }

@@ -9,11 +9,13 @@ class GastoCompartido extends Model
 {
     use HasFactory;
 
+    protected $table = 'gastos_compartidos';
+
     protected $fillable = [
         'grupo_gasto_id',
+        'pagado_por_participante_id', // ID del participante que pagó
         'descripcion',
         'monto_total',
-        'pagado_por', // user_id de quien pagó
         'fecha',
     ];
 
@@ -24,16 +26,16 @@ class GastoCompartido extends Model
 
     public function grupo()
     {
-        return $this->belongsTo(GrupoGasto::class);
+        return $this->belongsTo(GrupoGasto::class, 'grupo_gasto_id');
     }
 
     public function pagador()
     {
-        return $this->belongsTo(User::class, 'pagado_por');
+        return $this->belongsTo(Participante::class, 'pagado_por_participante_id');
     }
 
     public function aportes()
     {
-        return $this->hasMany(AporteGasto::class);
+        return $this->hasMany(AporteGasto::class, 'gasto_compartido_id');
     }
 }

@@ -13,6 +13,7 @@ use App\Http\Controllers\GrupoGastoController;
 use App\Http\Controllers\GastoCompartidoController;
 use App\Http\Controllers\AporteGastoController;
 use App\Http\Controllers\InvitacionGrupoController;
+use App\Http\Controllers\ParticipanteController;
 
 // Auth
 Route::post('/register', [AuthController::class, 'register']);
@@ -94,6 +95,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/invitaciones/{token}/rechazar', [InvitacionGrupoController::class, 'rechazar']);
     Route::get('/grupos-gastos/{grupoId}/invitaciones', [InvitacionGrupoController::class, 'pendientes']);
     Route::delete('/invitaciones/{invitacionId}', [InvitacionGrupoController::class, 'cancelar']);
+
+    // Participantes
+    Route::get('/grupos-gastos/{grupoId}/participantes', [ParticipanteController::class, 'index']);
+    Route::get('/participantes/{id}', [ParticipanteController::class, 'show']);
+    Route::post('/participantes', [ParticipanteController::class, 'store']);
+    Route::put('/participantes/{id}', [ParticipanteController::class, 'update']);
+    Route::delete('/participantes/{id}', [ParticipanteController::class, 'destroy']);
+    Route::post('/participantes/{id}/vincular', [ParticipanteController::class, 'vincularUsuario']);
 
     Route::get('/me', function (Request $request) {
         return response()->json($request->user());

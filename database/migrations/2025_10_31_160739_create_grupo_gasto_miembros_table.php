@@ -11,14 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('grupo_gasto_participantes', function (Blueprint $table) {
+        Schema::create('grupo_gasto_miembros', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('grupo_gasto_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->string('rol')->default('miembro');
+            $table->foreignId('grupo_gasto_id')->constrained('grupo_gastos')->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->timestamps();
 
-            // Evitar duplicados
             $table->unique(['grupo_gasto_id', 'user_id']);
         });
     }
@@ -28,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('grupo_gasto_participantes');
+        Schema::dropIfExists('grupo_gasto_miembros');
     }
 };
