@@ -27,9 +27,9 @@ class AporteGastoController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'gasto_compartido_id' => 'required|exists:gasto_compartidos,id',
-            'user_id' => 'required|exists:users,id',
-            'monto_esperado' => 'required|numeric|min:0',
+            'gasto_compartido_id' => 'required|exists:gastos_compartidos,id',
+            'participante_id' => 'required|exists:participantes,id',
+            'monto_asignado' => 'required|numeric|min:0',
             'monto_pagado' => 'nullable|numeric|min:0',
         ]);
 
@@ -39,8 +39,8 @@ class AporteGastoController extends Controller
     public function update(Request $request, $id)
     {
         $data = $request->validate([
-            'monto_esperado' => 'numeric|min:0',
-            'monto_pagado' => 'numeric|min:0',
+            'monto_asignado' => 'nullable|numeric|min:0',
+            'monto_pagado' => 'nullable|numeric|min:0',
         ]);
 
         return response()->json($this->service->update($id, $data));

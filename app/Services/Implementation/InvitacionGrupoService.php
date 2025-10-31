@@ -5,6 +5,7 @@ namespace App\Services\Implementation;
 use App\Models\InvitacionGrupo;
 use App\Models\GrupoGasto;
 use App\Models\User;
+use App\Models\Participante;
 use App\Services\Interface\InvitacionGrupoServiceInterface;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +21,7 @@ class InvitacionGrupoService implements InvitacionGrupoServiceInterface
 
         // Si existe usuario, verificar si ya es miembro
         if ($usuario) {
-            $esMiembro = $grupo->participantes()->where('user_id', $usuario->id)->exists();
+            $esMiembro = $grupo->miembros()->where('user_id', $usuario->id)->exists();
             if ($esMiembro) {
                 throw new \Exception('El usuario ya es miembro del grupo');
             }
@@ -69,7 +70,7 @@ class InvitacionGrupoService implements InvitacionGrupoServiceInterface
                 $query->whereNull('expira_en')
                       ->orWhere('expira_en', '>', now());
             })
-            ->with(['grupo', 'invitador'])
+            ->with(['grupo.participantes', 'invitador'])
             ->orderBy('created_at', 'desc')
             ->get();
     }
@@ -92,25 +93,34 @@ class InvitacionGrupoService implements InvitacionGrupoServiceInterface
                 throw new \Exception('La invitación ha expirado');
             }
 
-            // Agregar al grupo
             $grupo = GrupoGasto::findOrFail($invitacion->grupo_gasto_id);
             
             // Verificar que no sea ya miembro
-            $esMiembro = $grupo->participantes()->where('user_id', $userId)->exists();
+            $esMiembro = $grupo->miembros()->where('user_id', $userId)->exists();
             if ($esMiembro) {
                 throw new \Exception('Ya eres miembro del grupo');
             }
 
-            $grupo->participantes()->attach($userId, ['rol' => 'miembro']);
+            // 1. Agregar como miembro (puede ver/gestionar el grupo)
+            $grupo->miembros()->attach($userId);
 
-            // Actualizar invitación
+            // 2. Crear participante (aparece en gastos)
+            Participante::create([
+                'grupo_gasto_id' => $grupo->id,
+                'nombre' => $user->name,
+                'email' => $user->email,
+                'user_id' => $userId,
+            ]);
+
+            // 3. Actualizar invitación
             $invitacion->update([
                 'estado' => 'aceptada',
-                'user_id' => $userId, // Asegurarse que tenga el user_id
+                'user_id' => $userId,
             ]);
 
             DB::commit();
-            return $grupo->fresh(['participantes']);
+            
+            return $grupo->fresh(['miembros', 'participantes.usuario']);
         } catch (\Exception $e) {
             DB::rollBack();
             throw $e;
@@ -140,7 +150,27 @@ class InvitacionGrupoService implements InvitacionGrupoServiceInterface
             ->where('estado', 'pendiente')
             ->with(['invitador', 'usuario'])
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            ->map(function($invitacion) {
+                return [
+                    'id' => $invitacion->id,
+                    'email' => $invitacion->email,
+                    'token' => $invitacion->token,
+                    'estado' => $invitacion->estado,
+                    'expira_en' => $invitacion->expira_en,
+                    'invitador' => [
+                        'id' => $invitacion->invitador->id,
+                        'name' => $invitacion->invitador->name,
+                        'email' => $invitacion->invitador->email,
+                    ],
+                    'usuario' => $invitacion->usuario ? [
+                        'id' => $invitacion->usuario->id,
+                        'name' => $invitacion->usuario->name,
+                        'email' => $invitacion->usuario->email,
+                    ] : null,
+                    'created_at' => $invitacion->created_at,
+                ];
+            });
     }
 
     public function cancelarInvitacion($invitacionId)
