@@ -1,61 +1,66 @@
 <?php
-// filepath: c:\Users\morag\Desktop\TP5\ahorrApp-backend\routes\api.php
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\IngresoController;
 use App\Http\Controllers\GastoController;
 use App\Http\Controllers\CategoriaController;
-use App\Http\Controllers\IngresoController;
 use App\Http\Controllers\AhorroController;
-use App\Http\Controllers\GrupoGastoController;
-use App\Http\Controllers\GastoCompartidoController;
-use App\Http\Controllers\AporteGastoController;
+use App\Http\Controllers\DashboardController;
 
-// Rutas públicas
+// Auth
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
-// Rutas protegidas
 Route::middleware('auth:sanctum')->group(function () {
-    // Auth
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/user', [AuthController::class, 'user']);
 
-    // Gastos
-    Route::apiResource('gastos', GastoController::class);
-    Route::get('/gastos-top', [GastoController::class, 'topGastos']);
-
-    // Categorías
-    Route::apiResource('categorias', CategoriaController::class);
-    Route::get('/categorias-gasto', [CategoriaController::class, 'getGastoCategorias']);
-    Route::get('/categorias-ingreso', [CategoriaController::class, 'getIngresoCategorias']);
+    // User
+    Route::get('/users', [UserController::class, 'index']);
+    Route::get('/users/{id}', [UserController::class, 'show']);
+    Route::put('/users/{id}', [UserController::class, 'update']);
+    Route::delete('/users/{id}', [UserController::class, 'destroy']);
+    Route::put('/profile', [UserController::class, 'updateProfile']);
 
     // Ingresos
-    Route::apiResource('ingresos', IngresoController::class);
+    Route::get('/ingresos/estadisticas', [IngresoController::class, 'estadisticas']);
+    Route::get('/ingresos', [IngresoController::class, 'index']);
+    Route::get('/ingresos/{id}', [IngresoController::class, 'show']);
+    Route::post('/ingresos', [IngresoController::class, 'store']);
+    Route::put('/ingresos/{id}', [IngresoController::class, 'update']);
+    Route::delete('/ingresos/{id}', [IngresoController::class, 'destroy']);
+
+    // Gastos
+    Route::get('/gastos', [GastoController::class, 'index']);
+    Route::get('/gastos/top', [GastoController::class, 'topGastos']);
+    Route::get('/gastos/{id}', [GastoController::class, 'show']);
+    Route::post('/gastos', [GastoController::class, 'store']);
+    Route::put('/gastos/{id}', [GastoController::class, 'update']);
+    Route::delete('/gastos/{id}', [GastoController::class, 'destroy']);
+
+    // Categorias
+    Route::get('/categorias/gasto', [CategoriaController::class, 'gastoCategorias']);
+    Route::get('/categorias/ingreso', [CategoriaController::class, 'ingresoCategorias']);
+    Route::get('/categorias/resumen', [CategoriaController::class, 'resumen']);
+    Route::get('/categorias', [CategoriaController::class, 'index']);
+    Route::get('/categorias/{id}', [CategoriaController::class, 'show']);
+    Route::post('/categorias', [CategoriaController::class, 'store']);
+    Route::put('/categorias/{id}', [CategoriaController::class, 'update']);
+    Route::delete('/categorias/{id}', [CategoriaController::class, 'destroy']);
+
 
     // Ahorros
-    Route::apiResource('ahorros', AhorroController::class);
+    Route::get('/ahorros', [AhorroController::class, 'index']);
+    Route::get('/ahorros/{id}', [AhorroController::class, 'show']);
+    Route::post('/ahorros', [AhorroController::class, 'store']);
+    Route::put('/ahorros/{id}', [AhorroController::class, 'update']);
+    Route::delete('/ahorros/{id}', [AhorroController::class, 'destroy']);
 
-    // ========== GASTOS COMPARTIDOS ==========
+    Route::get('/me', function (Request $request) {
+        return response()->json($request->user());
+    });
 
-    // Grupos de gastos
-    Route::apiResource('grupos-gastos', GrupoGastoController::class);
-    Route::post('/grupos-gastos/{id}/participantes', [GrupoGastoController::class, 'addParticipante']);
-    Route::delete('/grupos-gastos/{id}/participantes', [GrupoGastoController::class, 'removeParticipante']);
-    Route::get('/grupos-gastos/{id}/balances', [GrupoGastoController::class, 'balances']);
-
-    // Gastos compartidos
-    Route::get('/grupos-gastos/{grupoId}/gastos-compartidos', [GastoCompartidoController::class, 'index']);
-    Route::apiResource('gastos-compartidos', GastoCompartidoController::class);
-    Route::post('/gastos-compartidos/{id}/aportes', [GastoCompartidoController::class, 'registrarAportes']);
-
-    // Aportes
-    Route::get('/gastos-compartidos/{gastoCompartidoId}/aportes', [AporteGastoController::class, 'index']);
-    Route::apiResource('aportes-gastos', AporteGastoController::class);
-    Route::put('/aportes-gastos/{id}/pagar', [AporteGastoController::class, 'registrarPago']);
-});
-
-Route::get('/', function () {
-    return response()->json(['message' => 'AhorrApp API']);
+    Route::get('/dashboard', [DashboardController::class, 'home']);
 });
