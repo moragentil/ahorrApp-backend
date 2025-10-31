@@ -9,6 +9,9 @@ use App\Http\Controllers\GastoController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\AhorroController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\GrupoGastoController;
+use App\Http\Controllers\GastoCompartidoController;
+use App\Http\Controllers\AporteGastoController;
 
 // Auth
 Route::post('/register', [AuthController::class, 'register']);
@@ -50,13 +53,38 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/categorias/{id}', [CategoriaController::class, 'update']);
     Route::delete('/categorias/{id}', [CategoriaController::class, 'destroy']);
 
-
     // Ahorros
     Route::get('/ahorros', [AhorroController::class, 'index']);
     Route::get('/ahorros/{id}', [AhorroController::class, 'show']);
     Route::post('/ahorros', [AhorroController::class, 'store']);
     Route::put('/ahorros/{id}', [AhorroController::class, 'update']);
     Route::delete('/ahorros/{id}', [AhorroController::class, 'destroy']);
+
+    // Grupos de Gastos Compartidos
+    Route::get('/grupos-gastos', [GrupoGastoController::class, 'index']);
+    Route::get('/grupos-gastos/{id}', [GrupoGastoController::class, 'show']);
+    Route::post('/grupos-gastos', [GrupoGastoController::class, 'store']);
+    Route::put('/grupos-gastos/{id}', [GrupoGastoController::class, 'update']);
+    Route::delete('/grupos-gastos/{id}', [GrupoGastoController::class, 'destroy']);
+    Route::post('/grupos-gastos/{id}/participantes', [GrupoGastoController::class, 'addParticipante']);
+    Route::delete('/grupos-gastos/{id}/participantes', [GrupoGastoController::class, 'removeParticipante']);
+    Route::get('/grupos-gastos/{id}/balances', [GrupoGastoController::class, 'balances']);
+
+    // Gastos Compartidos
+    Route::get('/grupos-gastos/{grupoId}/gastos-compartidos', [GastoCompartidoController::class, 'index']);
+    Route::get('/gastos-compartidos/{id}', [GastoCompartidoController::class, 'show']);
+    Route::post('/gastos-compartidos', [GastoCompartidoController::class, 'store']);
+    Route::put('/gastos-compartidos/{id}', [GastoCompartidoController::class, 'update']);
+    Route::delete('/gastos-compartidos/{id}', [GastoCompartidoController::class, 'destroy']);
+    Route::post('/gastos-compartidos/{id}/aportes', [GastoCompartidoController::class, 'registrarAportes']);
+
+    // Aportes de Gastos
+    Route::get('/gastos-compartidos/{gastoCompartidoId}/aportes', [AporteGastoController::class, 'index']);
+    Route::get('/aportes/{id}', [AporteGastoController::class, 'show']);
+    Route::post('/aportes', [AporteGastoController::class, 'store']);
+    Route::put('/aportes/{id}', [AporteGastoController::class, 'update']);
+    Route::delete('/aportes/{id}', [AporteGastoController::class, 'destroy']);
+    Route::post('/aportes/{id}/pagar', [AporteGastoController::class, 'registrarPago']);
 
     Route::get('/me', function (Request $request) {
         return response()->json($request->user());
