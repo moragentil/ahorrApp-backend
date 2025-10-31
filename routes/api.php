@@ -38,8 +38,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/ingresos/{id}', [IngresoController::class, 'destroy']);
 
     // Gastos
-    Route::get('/gastos', [GastoController::class, 'index']);
     Route::get('/gastos/top', [GastoController::class, 'topGastos']);
+    Route::get('/gastos', [GastoController::class, 'index']);
     Route::get('/gastos/{id}', [GastoController::class, 'show']);
     Route::post('/gastos', [GastoController::class, 'store']);
     Route::put('/gastos/{id}', [GastoController::class, 'update']);
@@ -62,47 +62,46 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/ahorros/{id}', [AhorroController::class, 'update']);
     Route::delete('/ahorros/{id}', [AhorroController::class, 'destroy']);
 
-    // Grupos de Gastos Compartidos
-    Route::get('/grupos-gastos', [GrupoGastoController::class, 'index']);
-    Route::get('/grupos-gastos/{id}', [GrupoGastoController::class, 'show']);
-    Route::post('/grupos-gastos', [GrupoGastoController::class, 'store']);
-    Route::put('/grupos-gastos/{id}', [GrupoGastoController::class, 'update']);
-    Route::delete('/grupos-gastos/{id}', [GrupoGastoController::class, 'destroy']);
-    Route::post('/grupos-gastos/{id}/participantes', [GrupoGastoController::class, 'addParticipante']);
-    Route::delete('/grupos-gastos/{id}/participantes', [GrupoGastoController::class, 'removeParticipante']);
-    Route::get('/grupos-gastos/{id}/balances', [GrupoGastoController::class, 'balances']);
+    // Invitaciones a Grupos (ANTES de las rutas de grupos)
+    Route::get('/invitaciones', [InvitacionGrupoController::class, 'misInvitaciones']);
+    Route::post('/invitaciones/{token}/aceptar', [InvitacionGrupoController::class, 'aceptar']);
+    Route::post('/invitaciones/{token}/rechazar', [InvitacionGrupoController::class, 'rechazar']);
+    Route::delete('/invitaciones/{invitacionId}', [InvitacionGrupoController::class, 'cancelar']);
 
-    // Gastos Compartidos
+    // Participantes (rutas específicas ANTES de las genéricas)
+    Route::get('/grupos-gastos/{grupoId}/participantes', [ParticipanteController::class, 'index']);
+    Route::post('/participantes', [ParticipanteController::class, 'store']);
+    Route::get('/participantes/{id}', [ParticipanteController::class, 'show']);
+    Route::put('/participantes/{id}', [ParticipanteController::class, 'update']);
+    Route::delete('/participantes/{id}', [ParticipanteController::class, 'destroy']);
+    Route::post('/participantes/{id}/vincular', [ParticipanteController::class, 'vincularUsuario']);
+
+    // Gastos Compartidos (rutas específicas ANTES de las genéricas)
     Route::get('/grupos-gastos/{grupoId}/gastos-compartidos', [GastoCompartidoController::class, 'index']);
-    Route::get('/gastos-compartidos/{id}', [GastoCompartidoController::class, 'show']);
     Route::post('/gastos-compartidos', [GastoCompartidoController::class, 'store']);
+    Route::get('/gastos-compartidos/{id}', [GastoCompartidoController::class, 'show']);
     Route::put('/gastos-compartidos/{id}', [GastoCompartidoController::class, 'update']);
     Route::delete('/gastos-compartidos/{id}', [GastoCompartidoController::class, 'destroy']);
-    Route::post('/gastos-compartidos/{id}/aportes', [GastoCompartidoController::class, 'registrarAportes']);
 
     // Aportes de Gastos
     Route::get('/gastos-compartidos/{gastoCompartidoId}/aportes', [AporteGastoController::class, 'index']);
-    Route::get('/aportes/{id}', [AporteGastoController::class, 'show']);
     Route::post('/aportes', [AporteGastoController::class, 'store']);
+    Route::get('/aportes/{id}', [AporteGastoController::class, 'show']);
     Route::put('/aportes/{id}', [AporteGastoController::class, 'update']);
     Route::delete('/aportes/{id}', [AporteGastoController::class, 'destroy']);
     Route::post('/aportes/{id}/pagar', [AporteGastoController::class, 'registrarPago']);
 
-    // Invitaciones a Grupos
-    Route::post('/grupos-gastos/{grupoId}/invitar', [InvitacionGrupoController::class, 'enviarInvitacion']);
-    Route::get('/invitaciones', [InvitacionGrupoController::class, 'misInvitaciones']);
-    Route::post('/invitaciones/{token}/aceptar', [InvitacionGrupoController::class, 'aceptar']);
-    Route::post('/invitaciones/{token}/rechazar', [InvitacionGrupoController::class, 'rechazar']);
+    // Grupos de Gastos (rutas más específicas primero)
     Route::get('/grupos-gastos/{grupoId}/invitaciones', [InvitacionGrupoController::class, 'pendientes']);
-    Route::delete('/invitaciones/{invitacionId}', [InvitacionGrupoController::class, 'cancelar']);
-
-    // Participantes
-    Route::get('/grupos-gastos/{grupoId}/participantes', [ParticipanteController::class, 'index']);
-    Route::get('/participantes/{id}', [ParticipanteController::class, 'show']);
-    Route::post('/participantes', [ParticipanteController::class, 'store']);
-    Route::put('/participantes/{id}', [ParticipanteController::class, 'update']);
-    Route::delete('/participantes/{id}', [ParticipanteController::class, 'destroy']);
-    Route::post('/participantes/{id}/vincular', [ParticipanteController::class, 'vincularUsuario']);
+    Route::post('/grupos-gastos/{grupoId}/invitar', [InvitacionGrupoController::class, 'enviarInvitacion']);
+    Route::get('/grupos-gastos/{id}/balances', [GrupoGastoController::class, 'balances']);
+    
+    // Grupos de Gastos (CRUD básico al final)
+    Route::get('/grupos-gastos', [GrupoGastoController::class, 'index']);
+    Route::post('/grupos-gastos', [GrupoGastoController::class, 'store']);
+    Route::get('/grupos-gastos/{id}', [GrupoGastoController::class, 'show']);
+    Route::put('/grupos-gastos/{id}', [GrupoGastoController::class, 'update']);
+    Route::delete('/grupos-gastos/{id}', [GrupoGastoController::class, 'destroy']);
 
     Route::get('/me', function (Request $request) {
         return response()->json($request->user());
