@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('gastos_compartidos', function (Blueprint $table) {
-            $table->string('icono', 20)->after('descripcion');
+            $table->string('icono', 20)->default('Coins')->after('descripcion');
         });
     }
 
