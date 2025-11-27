@@ -9,13 +9,13 @@ class GrupoGasto extends Model
 {
     use HasFactory;
 
+    // Especificar el nombre correcto de la tabla
     protected $table = 'grupo_gastos';
 
     protected $fillable = [
         'nombre',
         'descripcion',
         'creador_id',
-        'estado',
     ];
 
     public function creador()
@@ -23,14 +23,12 @@ class GrupoGasto extends Model
         return $this->belongsTo(User::class, 'creador_id');
     }
 
-    // Usuarios que pueden ver/gestionar el grupo
     public function miembros()
     {
         return $this->belongsToMany(User::class, 'grupo_gasto_miembros', 'grupo_gasto_id', 'user_id')
-                    ->withTimestamps();
+            ->withTimestamps();
     }
 
-    // Todos los participantes del grupo (usuarios y no usuarios)
     public function participantes()
     {
         return $this->hasMany(Participante::class, 'grupo_gasto_id');

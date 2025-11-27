@@ -29,7 +29,7 @@ class GastoCompartidoController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'grupo_gasto_id' => 'required|exists:grupos_gastos,id',
+            'grupo_gasto_id' => 'required|exists:grupo_gastos,id',
             'pagado_por_participante_id' => 'required|exists:participantes,id',
             'descripcion' => 'required|string|max:255',
             'monto_total' => 'required|numeric|min:0',
