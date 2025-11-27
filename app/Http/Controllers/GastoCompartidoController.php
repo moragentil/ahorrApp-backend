@@ -2,70 +2,92 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Services\Interface\GastoCompartidoServiceInterface;
+use Illuminate\Http\Request;
 
 class GastoCompartidoController extends Controller
 {
-    protected $service;
+    protected $gastoCompartidoService;
 
-    public function __construct(GastoCompartidoServiceInterface $service)
+    public function __construct(GastoCompartidoServiceInterface $gastoCompartidoService)
     {
-        $this->service = $service;
+        $this->gastoCompartidoService = $gastoCompartidoService;
     }
 
-    public function index(Request $request, $grupoId)
+    public function index($grupoId)
     {
-        return response()->json($this->service->all($grupoId));
+        $gastos = $this->gastoCompartidoService->all($grupoId);
+        return response()->json($gastos);
     }
 
     public function show($id)
     {
-        return response()->json($this->service->find($id));
+        $gasto = $this->gastoCompartidoService->find($id);
+        return response()->json($gasto);
     }
 
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'grupo_gasto_id' => 'required|exists:grupo_gastos,id',
+        $validated = $request->validate([
+            'grupo_gasto_id' => 'required|exists:grupos_gastos,id',
+            'pagado_por_participante_id' => 'required|exists:participantes,id',
             'descripcion' => 'required|string|max:255',
             'monto_total' => 'required|numeric|min:0',
-            'pagado_por_participante_id' => 'required|exists:participantes,id',
             'fecha' => 'required|date',
             'participantes' => 'nullable|array',
             'participantes.*' => 'exists:participantes,id',
         ]);
 
-        return response()->json($this->service->create($data), 201);
+        $gasto = $this->gastoCompartidoService->create($validated);
+        return response()->json($gasto, 201);
     }
 
     public function update(Request $request, $id)
     {
-        $data = $request->validate([
-            'descripcion' => 'nullable|string|max:255',
-            'monto_total' => 'nullable|numeric|min:0',
-            'pagado_por_participante_id' => 'nullable|exists:participantes,id',
-            'fecha' => 'nullable|date',
+        \Log::info('=== UPDATE GASTO COMPARTIDO ===');
+        \Log::info('ID:', ['id' => $id]);
+        \Log::info('Request data:', $request->all());
+        
+        $validated = $request->validate([
+            'descripcion' => 'sometimes|string|max:255',
+            'monto_total' => 'sometimes|numeric|min:0',
+            'fecha' => 'sometimes|date',
+            'pagado_por_participante_id' => 'sometimes|exists:participantes,id',
+            'participantes' => 'sometimes|array',
+            'participantes.*' => 'exists:participantes,id',
         ]);
 
-        return response()->json($this->service->update($id, $data));
+        \Log::info('Validated data:', $validated);
+
+        try {
+            $gasto = $this->gastoCompartidoService->update($id, $validated);
+            \Log::info('Gasto actualizado:', ['gasto' => $gasto]);
+            return response()->json($gasto);
+        } catch (\Exception $e) {
+            \Log::error('Error actualizando gasto:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
     }
 
     public function destroy($id)
     {
-        $this->service->delete($id);
-        return response()->json(['message' => 'Gasto compartido eliminado correctamente']);
+        $this->gastoCompartidoService->delete($id);
+        return response()->json(['message' => 'Gasto eliminado correctamente']);
     }
 
     public function registrarAportes(Request $request, $id)
     {
-        $data = $request->validate([
+        $validated = $request->validate([
             'aportes' => 'required|array',
             'aportes.*.participante_id' => 'required|exists:participantes,id',
             'aportes.*.monto_asignado' => 'required|numeric|min:0',
             'aportes.*.monto_pagado' => 'nullable|numeric|min:0',
         ]);
 
-        return response()->json($this->service->registrarAportes($id, $data['aportes']));
+        $gasto = $this->gastoCompartidoService->registrarAportes($id, $validated['aportes']);
+        return response()->json($gasto);
     }
 }

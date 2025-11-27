@@ -112,6 +112,7 @@ class GastoCompartidoService implements GastoCompartidoServiceInterface
             // Si se proporcionan participantes, crear aportes automáticamente
             if (isset($data['participantes']) && is_array($data['participantes']) && count($data['participantes']) > 0) {
                 $montoPorPersona = round($data['monto_total'] / count($data['participantes']), 2);
+                $pagadorId = $data['pagado_por_participante_id'];
                 
                 foreach ($data['participantes'] as $participanteId) {
                     // Validar que el participante pertenezca al grupo
@@ -119,12 +120,17 @@ class GastoCompartidoService implements GastoCompartidoServiceInterface
                         ->where('grupo_gasto_id', $data['grupo_gasto_id'])
                         ->firstOrFail();
 
+                    // Determinar si este participante es quien pagó
+                    $esPagador = ($participanteId == $pagadorId);
+                    $montoPagado = $esPagador ? $montoPorPersona : 0;
+                    $estado = $esPagador ? 'pagado' : 'pendiente';
+
                     AporteGasto::create([
                         'gasto_compartido_id' => $gasto->id,
                         'participante_id' => $participanteId,
                         'monto_asignado' => $montoPorPersona,
-                        'monto_pagado' => 0,
-                        'estado' => 'pendiente',
+                        'monto_pagado' => $montoPagado,
+                        'estado' => $estado,
                     ]);
                 }
             }
@@ -137,53 +143,107 @@ class GastoCompartidoService implements GastoCompartidoServiceInterface
         }
     }
 
-    public function update($id, array $data)
-    {
-        DB::beginTransaction();
-        try {
-            $gasto = GastoCompartido::findOrFail($id);
-            
-            $updateData = [];
-            
-            if (isset($data['descripcion'])) {
-                $updateData['descripcion'] = $data['descripcion'];
-            }
-            
-            if (isset($data['monto_total'])) {
-                $updateData['monto_total'] = $data['monto_total'];
+public function update($id, array $data)
+{
+    DB::beginTransaction();
+    try {
+        $gasto = GastoCompartido::findOrFail($id);
+        
+        $updateData = [];
+        
+        if (isset($data['descripcion'])) {
+            $updateData['descripcion'] = $data['descripcion'];
+        }
+        
+        if (isset($data['pagado_por_participante_id'])) {
+            // Validar que el nuevo pagador sea un participante del grupo
+            $pagador = Participante::where('id', $data['pagado_por_participante_id'])
+                ->where('grupo_gasto_id', $gasto->grupo_gasto_id)
+                ->firstOrFail();
                 
-                // Recalcular aportes si cambió el monto
-                $aportes = $gasto->aportes;
-                if ($aportes->count() > 0) {
-                    $montoPorPersona = round($data['monto_total'] / $aportes->count(), 2);
-                    foreach ($aportes as $aporte) {
-                        $aporte->update(['monto_asignado' => $montoPorPersona]);
-                    }
-                }
-            }
+            $updateData['pagado_por_participante_id'] = $data['pagado_por_participante_id'];
+        }
+        
+        if (isset($data['fecha'])) {
+            $updateData['fecha'] = $data['fecha'];
+        }
+
+        // Si se actualiza el monto o los participantes, recalcular aportes
+        $recalcularAportes = false;
+        $montoTotal = $gasto->monto_total;
+        
+        if (isset($data['monto_total'])) {
+            $updateData['monto_total'] = $data['monto_total'];
+            $montoTotal = $data['monto_total'];
+            $recalcularAportes = true;
+        }
+
+        // Actualizar el gasto
+        $gasto->update($updateData);
+
+        // Si se proporcionan nuevos participantes, actualizar aportes
+        if (isset($data['participantes']) && is_array($data['participantes']) && count($data['participantes']) > 0) {
+            // Eliminar aportes existentes
+            AporteGasto::where('gasto_compartido_id', $id)->delete();
             
-            if (isset($data['pagado_por_participante_id'])) {
+            // Crear nuevos aportes
+            $montoPorPersona = round($montoTotal / count($data['participantes']), 2);
+            $pagadorId = $updateData['pagado_por_participante_id'] ?? $gasto->pagado_por_participante_id;
+            
+            foreach ($data['participantes'] as $participanteId) {
+                // Asegurar que el ID sea un entero
+                $participanteId = (int) $participanteId;
+                
                 // Validar que el participante pertenezca al grupo
-                Participante::where('id', $data['pagado_por_participante_id'])
+                $participante = Participante::where('id', $participanteId)
                     ->where('grupo_gasto_id', $gasto->grupo_gasto_id)
                     ->firstOrFail();
-                    
-                $updateData['pagado_por_participante_id'] = $data['pagado_por_participante_id'];
+
+                $esPagador = ($participanteId == $pagadorId);
+                $montoPagado = $esPagador ? $montoPorPersona : 0;
+                $estado = $esPagador ? 'pagado' : 'pendiente';
+
+                AporteGasto::create([
+                    'gasto_compartido_id' => $gasto->id,
+                    'participante_id' => $participanteId,
+                    'monto_asignado' => $montoPorPersona,
+                    'monto_pagado' => $montoPagado,
+                    'estado' => $estado,
+                ]);
             }
             
-            if (isset($data['fecha'])) {
-                $updateData['fecha'] = $data['fecha'];
-            }
-
-            $gasto->update($updateData);
-
-            DB::commit();
-            return $this->find($id);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            throw $e;
+            // Marcar para no recalcular dos veces
+            $recalcularAportes = false;
         }
+
+        // Solo actualizar montos si cambió el monto_total pero no los participantes
+        if ($recalcularAportes) {
+            $aportes = AporteGasto::where('gasto_compartido_id', $id)->get();
+            if ($aportes->count() > 0) {
+                $montoPorPersona = round($montoTotal / $aportes->count(), 2);
+                $pagadorId = $updateData['pagado_por_participante_id'] ?? $gasto->pagado_por_participante_id;
+                
+                foreach ($aportes as $aporte) {
+                    $esPagador = ($aporte->participante_id == $pagadorId);
+                    $montoPagado = $esPagador ? $montoPorPersona : min($aporte->monto_pagado, $montoPorPersona);
+                    $estado = ($montoPagado >= $montoPorPersona) ? 'pagado' : 'pendiente';
+                    
+                    $aporte->update([
+                        'monto_asignado' => $montoPorPersona,
+                        'monto_pagado' => $montoPagado,
+                        'estado' => $estado,
+                    ]);
+                }
+            }
+        }
+
+        DB::commit();
+        return $this->find($id);
+    } catch (\Exception $e) {
+        DB::rollBack();
+        throw $e;
     }
+}
 
     public function delete($id)
     {
