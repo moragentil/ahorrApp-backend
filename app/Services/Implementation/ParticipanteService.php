@@ -44,4 +44,15 @@ class ParticipanteService implements ParticipanteServiceInterface
         $participante->update(['user_id' => $userId]);
         return $participante->fresh('usuario');
     }
+
+    // Nuevo método para asociar email y enviar invitación
+    public function asociarEmail($participanteId, $email)
+    {
+        $participante = Participante::findOrFail($participanteId);
+        
+        // Actualizar el email del participante
+        $participante->update(['email' => $email]);
+        
+        return $participante->fresh('usuario');
+    }
 }

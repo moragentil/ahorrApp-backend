@@ -4,14 +4,19 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\Interface\ParticipanteServiceInterface;
+use App\Services\Interface\InvitacionGrupoServiceInterface;
 
 class ParticipanteController extends Controller
 {
     protected $service;
+    protected $invitacionService;
 
-    public function __construct(ParticipanteServiceInterface $service)
-    {
+    public function __construct(
+        ParticipanteServiceInterface $service,
+        InvitacionGrupoServiceInterface $invitacionService
+    ) {
         $this->service = $service;
+        $this->invitacionService = $invitacionService;
     }
 
     public function index($grupoId)
@@ -59,5 +64,31 @@ class ParticipanteController extends Controller
         ]);
 
         return response()->json($this->service->vincularUsuario($id, $data['user_id']));
+    }
+
+    public function asociarEmail(Request $request, $id)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        try {
+            $participante = $this->service->asociarEmail($id, $request->email);
+            
+            // Enviar invitación automáticamente
+            $invitacion = $this->invitacionService->enviarInvitacion(
+                $participante->grupo_gasto_id,
+                $request->email,
+                auth()->id()
+            );
+            
+            return response()->json([
+                'participante' => $participante,
+                'invitacion' => $invitacion,
+                'message' => 'Email asociado e invitación enviada correctamente'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
     }
 }

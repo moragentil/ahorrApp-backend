@@ -75,6 +75,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/participantes/{id}', [ParticipanteController::class, 'update']);
     Route::delete('/participantes/{id}', [ParticipanteController::class, 'destroy']);
     Route::post('/participantes/{id}/vincular', [ParticipanteController::class, 'vincularUsuario']);
+    Route::post('/participantes/{id}/asociar-email', [ParticipanteController::class, 'asociarEmail']);
 
     // Gastos Compartidos (rutas específicas ANTES de las genéricas)
     Route::get('/grupos-gastos/{grupoId}/gastos-compartidos', [GastoCompartidoController::class, 'index']);
