@@ -259,6 +259,66 @@ class GrupoGastoService implements GrupoGastoServiceInterface
             $balance['total_debe'] = round($balance['total_debe'], 2);
         }
 
-        return array_values($balances);
+        // Calcular transacciones de equilibrio
+        $transacciones = $this->calcularTransacciones($balances);
+
+        return [
+            'balances' => array_values($balances),
+            'transacciones' => $transacciones,
+        ];
+    }
+
+    private function calcularTransacciones($balances)
+    {
+        $deudores = [];
+        $acreedores = [];
+        
+        // Separar en deudores y acreedores
+        foreach ($balances as $balance) {
+            if ($balance['balance'] < 0) {
+                $deudores[] = [
+                    'participante_id' => $balance['participante_id'],
+                    'nombre' => $balance['nombre'],
+                    'monto' => abs($balance['balance'])
+                ];
+            } elseif ($balance['balance'] > 0) {
+                $acreedores[] = [
+                    'participante_id' => $balance['participante_id'],
+                    'nombre' => $balance['nombre'],
+                    'monto' => $balance['balance']
+                ];
+            }
+        }
+
+        $transacciones = [];
+        $i = 0;
+        $j = 0;
+
+        // Algoritmo greedy para minimizar transacciones
+        while ($i < count($deudores) && $j < count($acreedores)) {
+            $montoTransferencia = min($deudores[$i]['monto'], $acreedores[$j]['monto']);
+            
+            if ($montoTransferencia > 0.01) { // Ignorar diferencias muy pequeñas
+                $transacciones[] = [
+                    'de_participante_id' => $deudores[$i]['participante_id'],
+                    'de_nombre' => $deudores[$i]['nombre'],
+                    'para_participante_id' => $acreedores[$j]['participante_id'],
+                    'para_nombre' => $acreedores[$j]['nombre'],
+                    'monto' => round($montoTransferencia, 2),
+                ];
+            }
+
+            $deudores[$i]['monto'] -= $montoTransferencia;
+            $acreedores[$j]['monto'] -= $montoTransferencia;
+
+            if ($deudores[$i]['monto'] < 0.01) {
+                $i++;
+            }
+            if ($acreedores[$j]['monto'] < 0.01) {
+                $j++;
+            }
+        }
+
+        return $transacciones;
     }
 }
