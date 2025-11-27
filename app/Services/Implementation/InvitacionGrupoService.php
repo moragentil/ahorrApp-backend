@@ -80,6 +80,25 @@ class InvitacionGrupoService implements InvitacionGrupoServiceInterface
         return $result;
     }
 
+    // Nuevo método para generar enlace de invitación del grupo
+    public function generarEnlaceInvitacion($grupoId, $invitadoPor)
+    {
+        $grupo = GrupoGasto::findOrFail($grupoId);
+
+        // Crear invitación genérica sin email específico
+        $invitacion = InvitacionGrupo::create([
+            'grupo_gasto_id' => $grupoId,
+            'email' => null, // No hay email específico
+            'user_id' => null, // No hay usuario específico
+            'invitado_por' => $invitadoPor,
+            'token' => Str::random(64),
+            'expira_en' => now()->addDays(30), // 30 días de validez para enlaces
+            'estado' => 'pendiente',
+        ]);
+
+        return $invitacion->fresh(['grupo', 'invitador']);
+    }
+
     public function misInvitaciones($userId)
     {
         $user = User::findOrFail($userId);
@@ -107,7 +126,8 @@ class InvitacionGrupoService implements InvitacionGrupoServiceInterface
             $invitacion = InvitacionGrupo::where('token', $token)
                 ->where(function($query) use ($user, $userId) {
                     $query->where('user_id', $userId)
-                          ->orWhere('email', $user->email);
+                          ->orWhere('email', $user->email)
+                          ->orWhereNull('email'); // Permite invitaciones genéricas
                 })
                 ->where('estado', 'pendiente')
                 ->firstOrFail();
@@ -158,6 +178,7 @@ class InvitacionGrupoService implements InvitacionGrupoServiceInterface
             $invitacion->update([
                 'estado' => 'aceptada',
                 'user_id' => $userId,
+                'email' => $user->email,
             ]);
 
             DB::commit();
@@ -200,6 +221,7 @@ class InvitacionGrupoService implements InvitacionGrupoServiceInterface
                     'token' => $invitacion->token,
                     'estado' => $invitacion->estado,
                     'expira_en' => $invitacion->expira_en,
+                    'es_enlace' => is_null($invitacion->email), // Indica si es enlace genérico
                     'invitador' => [
                         'id' => $invitacion->invitador->id,
                         'name' => $invitacion->invitador->name,

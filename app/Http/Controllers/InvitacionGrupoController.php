@@ -86,4 +86,20 @@ class InvitacionGrupoController extends Controller
             'message' => 'Invitación cancelada',
         ]);
     }
+
+    public function generarEnlace(Request $request, $grupoId)
+    {
+        try {
+            $invitacion = $this->service->generarEnlaceInvitacion($grupoId, auth()->id());
+            
+            return response()->json([
+                'token' => $invitacion->token,
+                'url' => config('app.frontend_url') . '/invitaciones/' . $invitacion->token,
+                'expira_en' => $invitacion->expira_en,
+                'invitacion' => $invitacion
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
+    }
 }

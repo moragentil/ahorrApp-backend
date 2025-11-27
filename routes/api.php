@@ -95,6 +95,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Grupos de Gastos (rutas más específicas primero)
     Route::get('/grupos-gastos/{grupoId}/invitaciones', [InvitacionGrupoController::class, 'pendientes']);
     Route::post('/grupos-gastos/{grupoId}/invitar', [InvitacionGrupoController::class, 'enviarInvitacion']);
+    Route::post('/grupos-gastos/{grupoId}/generar-enlace-invitacion', [InvitacionGrupoController::class, 'generarEnlace']);
     Route::get('/grupos-gastos/{id}/balances', [GrupoGastoController::class, 'balances']);
     
     // Grupos de Gastos (CRUD básico al final)
