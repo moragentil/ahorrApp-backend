@@ -43,6 +43,18 @@ class InvitacionGrupoService implements InvitacionGrupoServiceInterface
             throw new \Exception('Ya existe una invitación pendiente para este usuario');
         }
 
+        // Buscar participante sin usuario que coincida con el email
+        $participanteAsociable = null;
+        if ($usuario) {
+            $participanteAsociable = Participante::where('grupo_gasto_id', $grupoId)
+                ->where(function($query) use ($email, $usuario) {
+                    $query->where('email', $email)
+                          ->orWhere('nombre', $usuario->name);
+                })
+                ->whereNull('user_id')
+                ->first();
+        }
+
         // Crear invitación
         $invitacion = InvitacionGrupo::create([
             'grupo_gasto_id' => $grupoId,
@@ -54,7 +66,18 @@ class InvitacionGrupoService implements InvitacionGrupoServiceInterface
             'estado' => 'pendiente',
         ]);
 
-        return $invitacion->fresh(['grupo', 'invitador', 'usuario']);
+        $result = $invitacion->fresh(['grupo', 'invitador', 'usuario']);
+        
+        // Agregar información sobre participante asociable si existe
+        if ($participanteAsociable) {
+            $result->participante_asociable = [
+                'id' => $participanteAsociable->id,
+                'nombre' => $participanteAsociable->nombre,
+                'total_gastos' => $participanteAsociable->aportes()->count(),
+            ];
+        }
+
+        return $result;
     }
 
     public function misInvitaciones($userId)
@@ -104,13 +127,32 @@ class InvitacionGrupoService implements InvitacionGrupoServiceInterface
             // 1. Agregar como miembro (puede ver/gestionar el grupo)
             $grupo->miembros()->attach($userId);
 
-            // 2. Crear participante (aparece en gastos)
-            Participante::create([
-                'grupo_gasto_id' => $grupo->id,
-                'nombre' => $user->name,
-                'email' => $user->email,
-                'user_id' => $userId,
-            ]);
+            // 2. Buscar si existe un participante con el mismo email o nombre
+            $participanteExistente = Participante::where('grupo_gasto_id', $grupo->id)
+                ->where(function($query) use ($user) {
+                    $query->where('email', $user->email)
+                          ->orWhere('nombre', $user->name);
+                })
+                ->whereNull('user_id')
+                ->first();
+
+            if ($participanteExistente) {
+                // Vincular el participante existente con el usuario
+                // Esto preserva todos los gastos y aportes ya asociados
+                $participanteExistente->update([
+                    'user_id' => $userId,
+                    'nombre' => $user->name, // Actualizar nombre por si cambió
+                    'email' => $user->email, // Actualizar email
+                ]);
+            } else {
+                // No existe participante previo, crear uno nuevo
+                Participante::create([
+                    'grupo_gasto_id' => $grupo->id,
+                    'nombre' => $user->name,
+                    'email' => $user->email,
+                    'user_id' => $userId,
+                ]);
+            }
 
             // 3. Actualizar invitación
             $invitacion->update([
