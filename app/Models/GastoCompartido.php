@@ -15,6 +15,7 @@ class GastoCompartido extends Model
         'grupo_gasto_id',
         'pagado_por_participante_id', // ID del participante que pagó
         'descripcion',
+        'icono',
         'monto_total',
         'fecha',
     ];
