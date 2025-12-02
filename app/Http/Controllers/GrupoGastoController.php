@@ -78,6 +78,25 @@ class GrupoGastoController extends Controller
 
     public function balances($id)
     {
-        return response()->json($this->service->calcularBalances($id));
+        $balances = $this->service->calcularBalances($id);
+        return response()->json($balances);
+    }
+
+    public function registrarPagoBalance(Request $request, $grupoId)
+    {
+        $data = $request->validate([
+            'de_participante_id' => 'required|exists:participantes,id',
+            'para_participante_id' => 'required|exists:participantes,id',
+            'monto' => 'required|numeric|min:0.01',
+        ]);
+
+        try {
+            $balances = $this->service->registrarPagoBalance($grupoId, $data);
+            return response()->json($balances);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => $e->getMessage()
+            ], 400);
+        }
     }
 }

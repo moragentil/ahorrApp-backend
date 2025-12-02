@@ -3,6 +3,8 @@
 namespace App\Services\Implementation;
 
 use App\Models\GrupoGasto;
+use App\Models\GastoCompartido;
+use App\Models\AporteGasto;
 use App\Models\Participante;
 use App\Services\Interface\GrupoGastoServiceInterface;
 use Illuminate\Support\Facades\DB;
@@ -320,5 +322,49 @@ class GrupoGastoService implements GrupoGastoServiceInterface
         }
 
         return $transacciones;
+    }
+
+    public function registrarPagoBalance($grupoId, array $data)
+    {
+        DB::beginTransaction();
+        try {
+            // Validar que existan los participantes
+            $deudor = Participante::where('id', $data['de_participante_id'])
+                ->where('grupo_gasto_id', $grupoId)
+                ->firstOrFail();
+            
+            $acreedor = Participante::where('id', $data['para_participante_id'])
+                ->where('grupo_gasto_id', $grupoId)
+                ->firstOrFail();
+
+            $monto = $data['monto'];
+
+            // Crear un gasto compartido especial que represente este pago
+            // Este gasto solo involucra a estas dos personas
+            $gasto = GastoCompartido::create([
+                'grupo_gasto_id' => $grupoId,
+                'pagado_por_participante_id' => $data['de_participante_id'], // El deudor paga
+                'descripcion' => "Pago de balance: {$deudor->nombre} → {$acreedor->nombre}",
+                'icono' => 'ArrowRight',
+                'monto_total' => $monto,
+                'fecha' => now(),
+            ]);
+
+            // Solo el acreedor "debe" este gasto (para reducir su balance positivo)
+            // El deudor lo pagó (para reducir su balance negativo)
+            AporteGasto::create([
+                'gasto_compartido_id' => $gasto->id,
+                'participante_id' => $data['para_participante_id'], // El acreedor es el único que "debe"
+                'monto_asignado' => $monto,
+                'monto_pagado' => 0,
+                'estado' => 'pendiente',
+            ]);
+
+            DB::commit();
+            return $this->calcularBalances($grupoId);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
     }
 }
