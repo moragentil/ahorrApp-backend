@@ -16,6 +16,7 @@ class GastoCompartido extends Model
         'pagado_por_participante_id', // ID del participante que pagó
         'descripcion',
         'icono',
+        'es_pago_balance',
         'monto_total',
         'fecha',
     ];
@@ -23,6 +24,7 @@ class GastoCompartido extends Model
     protected $casts = [
         'fecha' => 'date',
         'monto_total' => 'decimal:2',
+        'es_pago_balance' => 'boolean',
     ];
 
     public function grupo()
@@ -38,5 +40,17 @@ class GastoCompartido extends Model
     public function aportes()
     {
         return $this->hasMany(AporteGasto::class, 'gasto_compartido_id');
+    }
+
+    // Scope para excluir pagos de balance
+    public function scopeSoloGastos($query)
+    {
+        return $query->where('es_pago_balance', false);
+    }
+
+    // Scope para solo pagos de balance
+    public function scopeSoloPagosBalance($query)
+    {
+        return $query->where('es_pago_balance', true);
     }
 }

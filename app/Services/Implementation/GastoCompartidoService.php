@@ -13,37 +13,23 @@ class GastoCompartidoService implements GastoCompartidoServiceInterface
     public function all($grupoId)
     {
         return GastoCompartido::where('grupo_gasto_id', $grupoId)
-            ->with(['pagador.usuario', 'aportes.participante.usuario'])
+            ->soloGastos() // ✅ Excluir pagos de balance
+            ->with([
+                'pagador.usuario',
+                'aportes.participante.usuario'
+            ])
             ->orderBy('fecha', 'desc')
             ->get()
             ->map(function($gasto) {
                 return [
                     'id' => $gasto->id,
+                    'grupo_gasto_id' => $gasto->grupo_gasto_id,
                     'descripcion' => $gasto->descripcion,
+                    'icono' => $gasto->icono,
                     'monto_total' => $gasto->monto_total,
                     'fecha' => $gasto->fecha->format('Y-m-d'),
-                    'pagador' => [
-                        'id' => $gasto->pagador->id,
-                        'nombre' => $gasto->pagador->nombre,
-                        'email' => $gasto->pagador->email,
-                        'es_usuario' => !is_null($gasto->pagador->user_id),
-                    ],
-                    'aportes' => $gasto->aportes->map(function($aporte) {
-                        return [
-                            'id' => $aporte->id,
-                            'participante_id' => $aporte->participante_id,
-                            'participante' => [
-                                'id' => $aporte->participante->id,
-                                'nombre' => $aporte->participante->nombre,
-                                'email' => $aporte->participante->email,
-                                'es_usuario' => !is_null($aporte->participante->user_id),
-                            ],
-                            'monto_asignado' => $aporte->monto_asignado,
-                            'monto_pagado' => $aporte->monto_pagado,
-                            'saldo' => $aporte->saldo,
-                            'estado' => $aporte->estado,
-                        ];
-                    }),
+                    'pagador' => $gasto->pagador,
+                    'aportes' => $gasto->aportes,
                     'created_at' => $gasto->created_at,
                     'updated_at' => $gasto->updated_at,
                 ];
@@ -115,7 +101,7 @@ class GastoCompartidoService implements GastoCompartidoServiceInterface
                 $pagadorId = $data['pagado_por_participante_id'];
                 
                 foreach ($data['participantes'] as $participanteId) {
-                    // Validar que el participante pertenezca al grupo
+                    // Validar que el participante pertenzca al grupo
                     $participante = Participante::where('id', $participanteId)
                         ->where('grupo_gasto_id', $data['grupo_gasto_id'])
                         ->firstOrFail();

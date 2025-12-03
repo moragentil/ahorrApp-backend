@@ -340,21 +340,20 @@ class GrupoGastoService implements GrupoGastoServiceInterface
             $monto = $data['monto'];
 
             // Crear un gasto compartido especial que represente este pago
-            // Este gasto solo involucra a estas dos personas
             $gasto = GastoCompartido::create([
                 'grupo_gasto_id' => $grupoId,
-                'pagado_por_participante_id' => $data['de_participante_id'], // El deudor paga
+                'pagado_por_participante_id' => $data['de_participante_id'],
                 'descripcion' => "Pago de balance: {$deudor->nombre} → {$acreedor->nombre}",
                 'icono' => 'ArrowRight',
+                'es_pago_balance' => true, // ✅ Marcar como pago de balance
                 'monto_total' => $monto,
                 'fecha' => now(),
             ]);
 
-            // Solo el acreedor "debe" este gasto (para reducir su balance positivo)
-            // El deudor lo pagó (para reducir su balance negativo)
+            // Solo el acreedor "debe" este gasto
             AporteGasto::create([
                 'gasto_compartido_id' => $gasto->id,
-                'participante_id' => $data['para_participante_id'], // El acreedor es el único que "debe"
+                'participante_id' => $data['para_participante_id'],
                 'monto_asignado' => $monto,
                 'monto_pagado' => 0,
                 'estado' => 'pendiente',
