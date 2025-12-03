@@ -27,7 +27,7 @@ class InvitacionGrupoService implements InvitacionGrupoServiceInterface
             }
         }
 
-        // Verificar si ya existe una invitación pendiente para este email/usuario
+        // Verificar si ya existe una invitación pendiente
         $queryInvitacion = InvitacionGrupo::where('grupo_gasto_id', $grupoId)
             ->where('estado', 'pendiente');
 
@@ -40,7 +40,17 @@ class InvitacionGrupoService implements InvitacionGrupoServiceInterface
         $invitacionExistente = $queryInvitacion->first();
 
         if ($invitacionExistente) {
-            throw new \Exception('Ya existe una invitación pendiente para este usuario');
+            // ✅ En lugar de lanzar error, actualizar la invitación existente
+            $invitacionExistente->update([
+                'token' => Str::random(64),
+                'expira_en' => now()->addDays(7),
+                'invitado_por' => $invitadoPor,
+                'updated_at' => now(),
+            ]);
+            
+            \Log::info('Invitación actualizada para: ' . $email);
+            
+            return $invitacionExistente->fresh(['grupo', 'invitador', 'usuario']);
         }
 
         // Buscar participante sin usuario que coincida con el email
@@ -55,7 +65,7 @@ class InvitacionGrupoService implements InvitacionGrupoServiceInterface
                 ->first();
         }
 
-        // Crear invitación
+        // Crear invitación nueva
         $invitacion = InvitacionGrupo::create([
             'grupo_gasto_id' => $grupoId,
             'email' => $email,
