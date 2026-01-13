@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Services\Interface\ParticipanteServiceInterface;
 use App\Services\Interface\InvitacionGrupoServiceInterface;
+use App\Models\User; // <-- import
 
 class ParticipanteController extends Controller
 {
@@ -38,7 +39,25 @@ class ParticipanteController extends Controller
             'user_id' => 'nullable|exists:users,id',
         ]);
 
-        return response()->json($this->service->create($data), 201);
+        try {
+            $participante = $this->service->create($data);
+
+            // Enviar invitación automática si el email pertenece a un usuario registrado
+            if (!empty($data['email'])) {
+                $usuario = User::where('email', $data['email'])->first();
+                if ($usuario) {
+                    $this->invitacionService->enviarInvitacion(
+                        $data['grupo_gasto_id'],
+                        $data['email'],
+                        $request->user()->id
+                    );
+                }
+            }
+
+            return response()->json($participante, 201);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
     }
 
     public function update(Request $request, $id)
