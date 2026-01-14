@@ -106,6 +106,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/grupos-gastos/{id}', [GrupoGastoController::class, 'show']);
     Route::put('/grupos-gastos/{id}', [GrupoGastoController::class, 'update']);
     Route::delete('/grupos-gastos/{id}', [GrupoGastoController::class, 'destroy']);
+    Route::get('/grupos-gastos/{id}/estadisticas', [GrupoGastoController::class, 'estadisticas']);
 
     Route::get('/me', function (Request $request) {
         return response()->json($request->user());

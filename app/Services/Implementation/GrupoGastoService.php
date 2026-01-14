@@ -366,4 +366,41 @@ class GrupoGastoService implements GrupoGastoServiceInterface
             throw $e;
         }
     }
+
+    public function getEstadisticas($grupoId, $userId)
+    {
+        $grupo = GrupoGasto::with([
+            'participantes',
+            'gastosCompartidos' => function($query) {
+                $query->where('es_pago_balance', false)
+                      ->orWhereNull('es_pago_balance');
+            }
+        ])->findOrFail($grupoId);
+
+        // Calcular el total de todos los gastos compartidos
+        $totalGastosGrupo = $grupo->gastosCompartidos->sum('monto_total');
+
+        // Encontrar el participante del usuario
+        $participanteUsuario = $grupo->participantes()
+            ->where('user_id', $userId)
+            ->first();
+
+        // Calcular cuánto ha pagado el usuario
+        $totalPagadoUsuario = 0;
+        if ($participanteUsuario) {
+            $totalPagadoUsuario = GastoCompartido::where('grupo_gasto_id', $grupoId)
+                ->where('pagado_por_participante_id', $participanteUsuario->id)
+                ->where(function($query) {
+                    $query->where('es_pago_balance', false)
+                          ->orWhereNull('es_pago_balance');
+                })
+                ->sum('monto_total');
+        }
+
+        return [
+            'total_gastos_grupo' => round($totalGastosGrupo, 2),
+            'total_pagado_usuario' => round($totalPagadoUsuario, 2),
+            'participante_id' => $participanteUsuario ? $participanteUsuario->id : null,
+        ];
+    }
 }

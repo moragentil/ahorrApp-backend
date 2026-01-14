@@ -99,4 +99,11 @@ class GrupoGastoController extends Controller
             ], 400);
         }
     }
+
+    public function estadisticas(Request $request, $id)
+    {
+        $userId = $request->user()->id;
+        $estadisticas = $this->service->getEstadisticas($id, $userId);
+        return response()->json($estadisticas);
+    }
 }

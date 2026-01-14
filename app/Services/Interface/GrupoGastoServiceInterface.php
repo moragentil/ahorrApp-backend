@@ -14,4 +14,5 @@ interface GrupoGastoServiceInterface
     public function removeParticipante($grupoId, $userId);
     public function calcularBalances($grupoId);
     public function registrarPagoBalance($grupoId, array $data);
+    public function getEstadisticas($grupoId, $userId); 
 }
